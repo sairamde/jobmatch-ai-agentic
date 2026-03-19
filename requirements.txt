@@ -1,0 +1,5 @@
+google-generativeai
+tavily-python
+python-dotenv
+langchain
+langgraph
