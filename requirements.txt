@@ -1,5 +1,6 @@
+streamlit
+langchain
+langgraph
 google-generativeai
 tavily-python
 python-dotenv
-langchain
-langgraph
