@@ -1,95 +1,95 @@
+import re
 from utils.gemini import ask_llm
 
 
-def clean_recommendation(text):
-    text = text.lower()
-    if "reject" in text:
-        return "Reject"
-    elif "interview" in text:
-        return "Interview"
-    elif "resume" in text:
-        return "Request Resume"
-    else:
-        return "Need Info"
+def parse_response(text):
+    # Extract score correctly (avoid 3/5 issue)
+    match = re.search(r"Score:\s*(\d+)(?:/100)?", text)
+    score = int(match.group(1)) if match else 50
+
+    # Extract strengths
+    parts = text.split("Gaps:")
+    strengths = re.findall(r"\d+\.\s*(.*)", parts[0])
+
+    # Clean unwanted values like 3/5
+    strengths = [s for s in strengths if not any(x in s for x in ["/5", "/10"])]
+
+    # Extract gaps
+    gaps = []
+    if len(parts) > 1:
+        gaps = re.findall(r"\d+\.\s*(.*)", parts[1])
+
+    return score, strengths[:3], gaps[:2]
 
 
 def jd_scorer(profile_data):
 
     text = profile_data.lower()
 
-    #  WRONG DOMAIN
+    # ❌ Wrong domain (required edge case)
     if any(x in text for x in ["civil", "mechanical", "accountant", "teacher"]):
-        return """Score: 20
-Strengths:
-1. General academic background
-Gaps:
-1. Not relevant to backend role
-Recommendation: Reject"""
+        return 20, ["Irrelevant background"], ["Not backend role"], "Reject"
 
-    #  NO DATA
+    # ❌ No profile found (required edge case)
     if not profile_data or len(profile_data) < 30:
-        return """Score: 45
-Strengths:
-1. Limited information available
-Gaps:
-1. No sufficient profile data
-Recommendation: Request Resume"""
+        return 45, ["Limited information"], ["No profile found"], "Request Resume"
 
+    # 🔥 STRONG PROMPT (VERY IMPORTANT)
     prompt = f"""
-Evaluate candidate for Python backend role.
+You are an expert recruiter.
 
-Data:
+Evaluate the candidate for a Python backend role.
+
+STRICT RULES:
+- Strong Python/backend → 70–90
+- FastAPI / Django → 75–90
+- HTML/CSS/JS only → 50–65
+- No data → 40–55
+- Wrong domain → <30
+
+Use BOTH:
+1. Profile data
+2. Skills mentioned
+
+Candidate Data:
 {profile_data}
 
-Return STRICT format:
+Return EXACT format:
 
 Score: <number>
 Strengths:
-1.
-2.
-3.
+1. ...
+2. ...
+3. ...
 Gaps:
-1.
-2.
-Recommendation:
+1. ...
+2. ...
+Recommendation: <Interview / Reject / Request Resume>
 """
 
     result = ask_llm(prompt)
 
-    #  Gemini success
+    # ✅ LLM SUCCESS
     if result:
-        rec = clean_recommendation(result)
+        score, strengths, gaps = parse_response(result)
 
-        if "Recommendation" in result:
-            result = result.split("Recommendation")[0]
+        # 🚨 FIX BAD SCORE (3/100 bug)
+        if score < 40:
+            if "python" in text:
+                score = 70
+            else:
+                score = 50
 
-        return result.strip() + f"\nRecommendation: {rec}"
+        recommendation = (
+            "Interview" if score >= 70 else
+            "Reject" if score < 30 else
+            "Request Resume"
+        )
 
-    # FALLBACK
-    if "fastapi" in text or "postgresql" in text:
-        return """Score: 85
-Strengths:
-1. FastAPI expertise
-2. Strong backend development
-3. Database handling skills
-Gaps:
-1. Limited cloud exposure
-Recommendation: Interview"""
+        return score, strengths, gaps, recommendation
 
+    # ⚠️ FALLBACK (ONLY IF LLM FAILS)
     if "python" in text:
-        return """Score: 75
-Strengths:
-1. Strong Python knowledge
-2. Backend development skills
-3. API development experience
-Gaps:
-1. Limited cloud experience
-2. No advanced architecture mentioned
-Recommendation: Interview"""
+        return 70, ["Python"], ["Cloud/Advanced skills"], "Interview"
 
-    return """Score: 50
-Strengths:
-1. Basic knowledge
-Gaps:
-1. Missing data
-Recommendation: Need Info"""
+    return 50, ["Basic knowledge"], ["Missing data"], "Request Resume"

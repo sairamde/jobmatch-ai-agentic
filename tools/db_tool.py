@@ -21,15 +21,20 @@ def db_tool(action, name=None, score=None, strengths=None, gaps=None, url=None):
         cursor.execute("SELECT * FROM candidates WHERE name=?", (name,))
         if cursor.fetchone():
             cursor.execute("""
-            UPDATE candidates SET score=?, strengths=?, gaps=?, url=? WHERE name=?
+                UPDATE candidates
+                SET score=?, strengths=?, gaps=?, url=?
+                WHERE name=?
             """, (score, strengths, gaps, url, name))
-            conn.commit()
-            return "Updated existing record"
         else:
             cursor.execute("INSERT INTO candidates VALUES (?, ?, ?, ?, ?)",
                            (name, score, strengths, gaps, url))
-            conn.commit()
-            return "Saved successfully"
+
+        conn.commit()
+        return "Saved"
+
+    elif action == "SELECT":
+        cursor.execute("SELECT * FROM candidates WHERE name=?", (name,))
+        return cursor.fetchone() or "No record found"
 
     elif action == "LIST":
         cursor.execute("SELECT name, score FROM candidates")
@@ -44,6 +49,7 @@ def db_tool(action, name=None, score=None, strengths=None, gaps=None, url=None):
         cursor.execute("SELECT * FROM candidates WHERE name=?", (name,))
         if not cursor.fetchone():
             return "No record found for that candidate"
+
         cursor.execute("DELETE FROM candidates WHERE name=?", (name,))
         conn.commit()
         return "Deleted successfully"
@@ -51,4 +57,4 @@ def db_tool(action, name=None, score=None, strengths=None, gaps=None, url=None):
     elif action == "CLEAR":
         cursor.execute("DELETE FROM candidates")
         conn.commit()
-        return "All records deleted successfully"
+        return "All data cleared"

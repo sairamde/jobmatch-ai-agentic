@@ -1,19 +1,16 @@
-from tavily import TavilyClient
 import os
-import streamlit as st
+from dotenv import load_dotenv
+from tavily import TavilyClient
 
+load_dotenv()
 
-try:
-    api_key = st.secrets["TAVILY_API_KEY"]
-except:
-    api_key = os.getenv("TAVILY_API_KEY")
+client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
-client = TavilyClient(api_key=api_key)
-
-def web_search(query):
+def web_search(query: str) -> str:
     try:
         res = client.search(query=query, max_results=3)
         results = res.get("results", [])
-        return " ".join([r["content"] for r in results])
-    except:
+        return " ".join([r.get("content", "") for r in results])
+    except Exception as e:
+        print("Search Error:", e)
         return ""

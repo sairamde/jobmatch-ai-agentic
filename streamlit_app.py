@@ -1,5 +1,5 @@
 import streamlit as st
-from agent.agent import run_agent  
+from agent.langgraph_agent import run_agent
 from tools.db_tool import db_tool
 
 # ---------------- CONFIG ----------------
@@ -30,35 +30,35 @@ if menu == "Evaluate Candidate":
 
     if st.button("Evaluate"):
 
-        #  EMPTY CHECK
+        # 🔥 STRONG VALIDATION
+        invalid_names = ["python", "java", "ai", "ml", "test", "abc", "none", "unknown"]
+        invalid_roles = ["sairam", "abc", "none", "unknown"]
+
         if not name.strip():
-            st.warning("Enter candidate name")
+            st.warning("⚠️ Please enter candidate name")
 
-        #  INVALID NAME (must be 2 words)
-        elif len(name.split()) < 2:
-            st.warning("Enter full name (e.g., Rahul Sharma)")
+        elif name.lower() in invalid_names or len(name.strip()) < 3:
+            st.warning("⚠️ Enter a valid person name (not skills or random text)")
 
-        #  INVALID ROLE
-        elif role.lower() in ["unknown", "", "none"]:
-            st.warning("Enter valid role (e.g., Python backend)")
+        elif not role.strip():
+            st.warning("⚠️ Please enter role (e.g., Python backend)")
 
-        #  NON-TECH ROLE BLOCK
-        elif not any(word in role.lower() for word in [
-            "python", "backend", "developer", "engineer", "fastapi", "django"
-        ]):
-            st.warning("Enter valid technical role (e.g., Python Backend Developer)")
+        elif role.lower() in invalid_roles or len(role.strip()) < 3:
+            st.warning("⚠️ Enter a valid job role")
 
-        #  VALID INPUT
         else:
-            query = f"Evaluate {name} {role}"
+            # ✅ CORRECT QUERY FORMAT
+            query = f"Evaluate {name} for {role}"
 
-            with st.spinner("Processing..."):
+            with st.spinner("🔍 Evaluating candidate..."):
                 result = run_agent(query)
 
-            st.success("Evaluation Complete ✅")
+            st.success("✅ Evaluation Complete")
 
+            # ✅ CLEAN RESULT UI
             st.markdown("### 📊 Result")
-            st.code(result)
+            st.code(result, language="text")
+
 
 # ---------------- PAGE 2 ----------------
 elif menu == "Show All Candidates":
@@ -73,6 +73,7 @@ elif menu == "Show All Candidates":
         for row in data:
             st.write(f"👤 {row[0]} — Score: {row[1]}")
 
+
 # ---------------- PAGE 3 ----------------
 elif menu == "Top 3 Candidates":
 
@@ -86,24 +87,28 @@ elif menu == "Top 3 Candidates":
     else:
         st.warning("No data available")
 
+
 # ---------------- PAGE 4 ----------------
 elif menu == "Remove Candidate":
 
     st.header("❌ Remove Candidate")
 
-    remove_name = st.text_input("Enter Candidate Name")
+    name = st.text_input("Enter Candidate Name")
 
     if st.button("Remove"):
-        if remove_name.strip():
-            result = db_tool("DELETE", name=remove_name)
-            st.success(result)
-        else:
+        if not name.strip():
             st.warning("Enter a valid name")
+        else:
+            result = db_tool("DELETE", name=name)
+            st.success(result)
+
 
 # ---------------- PAGE 5 ----------------
 elif menu == "Clear Database":
 
     st.header("🧹 Clear Database")
+
+    st.warning("⚠️ This will delete ALL records permanently!")
 
     if st.button("Clear All Data"):
         result = db_tool("CLEAR")

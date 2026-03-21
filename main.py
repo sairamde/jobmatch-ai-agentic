@@ -1,11 +1,8 @@
-from agent.agent import run_agent
+from agent.langgraph_agent import run_agent
 
 while True:
-    query = input("\nEnter command: ")
-
-    if query.lower() == "exit":
+    q = input("\nEnter command: ")
+    if q.lower() == "exit":
         break
 
-    result = run_agent(query)
-    print("\nFINAL OUTPUT:")
-    print(result)
+    print(run_agent(q))
