@@ -1,5 +1,5 @@
 import streamlit as st
-from agent.agent import run_agent   # ✅ correct import
+from agent.agent import run_agent  
 from tools.db_tool import db_tool
 
 # ---------------- CONFIG ----------------
@@ -30,25 +30,25 @@ if menu == "Evaluate Candidate":
 
     if st.button("Evaluate"):
 
-        # ❌ EMPTY CHECK
+        #  EMPTY CHECK
         if not name.strip():
             st.warning("Enter candidate name")
 
-        # ❌ INVALID NAME (must be 2 words)
+        #  INVALID NAME (must be 2 words)
         elif len(name.split()) < 2:
             st.warning("Enter full name (e.g., Rahul Sharma)")
 
-        # ❌ INVALID ROLE
+        #  INVALID ROLE
         elif role.lower() in ["unknown", "", "none"]:
             st.warning("Enter valid role (e.g., Python backend)")
 
-        # ❌ NON-TECH ROLE BLOCK
+        #  NON-TECH ROLE BLOCK
         elif not any(word in role.lower() for word in [
             "python", "backend", "developer", "engineer", "fastapi", "django"
         ]):
             st.warning("Enter valid technical role (e.g., Python Backend Developer)")
 
-        # ✅ VALID INPUT
+        #  VALID INPUT
         else:
             query = f"Evaluate {name} {role}"
 

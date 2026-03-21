@@ -17,7 +17,7 @@ def jd_scorer(profile_data):
 
     text = profile_data.lower()
 
-    # ❌ WRONG DOMAIN
+    #  WRONG DOMAIN
     if any(x in text for x in ["civil", "mechanical", "accountant", "teacher"]):
         return """Score: 20
 Strengths:
@@ -26,7 +26,7 @@ Gaps:
 1. Not relevant to backend role
 Recommendation: Reject"""
 
-    # ❌ NO DATA
+    #  NO DATA
     if not profile_data or len(profile_data) < 30:
         return """Score: 45
 Strengths:
@@ -56,7 +56,7 @@ Recommendation:
 
     result = ask_llm(prompt)
 
-    # ✅ Gemini success
+    #  Gemini success
     if result:
         rec = clean_recommendation(result)
 
@@ -65,7 +65,7 @@ Recommendation:
 
         return result.strip() + f"\nRecommendation: {rec}"
 
-    # ✅ FALLBACK
+    # FALLBACK
     if "fastapi" in text or "postgresql" in text:
         return """Score: 85
 Strengths:
