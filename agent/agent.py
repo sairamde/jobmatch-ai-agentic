@@ -5,8 +5,6 @@ from tools.jd_scorer import jd_scorer
 from tools.db_tool import db_tool
 import re
 
-MAX_ITER = 8
-
 
 class State(TypedDict):
     query: str
@@ -23,8 +21,8 @@ def extract_name(q):
 
 
 def extract_score(text):
-    m = re.search(r"(\d+)", text)
-    return int(m.group(1)) if m else 50
+    match = re.search(r"Score[: ]+(\d+)", text)
+    return int(match.group(1)) if match else 50
 
 
 def extract_skills(q):
@@ -35,22 +33,17 @@ def extract_skills(q):
     return ", ".join(skills)
 
 
-# -------- NODES --------
-
 def search_node(s):
-    print("[LangGraph] Searching...")
     return {"search": web_search(s["query"])}
 
 
 def score_node(s):
-    print("[LangGraph] Scoring...")
     data = s["search"] + " Skills: " + extract_skills(s["query"])
     res = jd_scorer(data)
     return {"score_text": res, "score": extract_score(res)}
 
 
 def db_node(s):
-    print("[LangGraph] Saving...")
     db_tool("INSERT", name=s["name"], score=s["score"],
             strengths="From LLM", gaps="From LLM", url="N/A")
     return {}
@@ -62,8 +55,6 @@ def final_node(s):
     }
 
 
-# -------- GRAPH --------
-
 def build():
     g = StateGraph(State)
 
@@ -73,7 +64,6 @@ def build():
     g.add_node("final", final_node)
 
     g.set_entry_point("search")
-
     g.add_edge("search", "score")
     g.add_edge("score", "db")
     g.add_edge("db", "final")
@@ -90,7 +80,6 @@ def run_agent(query):
     if not query.strip():
         return "Invalid input"
 
-    # DB COMMANDS
     if "show all" in query.lower():
         return db_tool("LIST")
 
@@ -99,9 +88,6 @@ def run_agent(query):
 
     if "remove" in query.lower():
         return db_tool("DELETE", name=extract_name(query))
-
-    if "show" in query.lower():
-        return db_tool("SELECT", name=extract_name(query))
 
     result = graph.invoke({
         "query": query,

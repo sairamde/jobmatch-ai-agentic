@@ -1,5 +1,5 @@
 import streamlit as st
-from agent.agent import run_agent
+from agent.agent import run_agent   # ✅ correct import
 from tools.db_tool import db_tool
 
 # ---------------- CONFIG ----------------
@@ -30,13 +30,25 @@ if menu == "Evaluate Candidate":
 
     if st.button("Evaluate"):
 
-        # ✅ VALIDATION (IMPORTANT EDGE CASE)
+        # ❌ EMPTY CHECK
         if not name.strip():
             st.warning("Enter candidate name")
-        
+
+        # ❌ INVALID NAME (must be 2 words)
+        elif len(name.split()) < 2:
+            st.warning("Enter full name (e.g., Rahul Sharma)")
+
+        # ❌ INVALID ROLE
         elif role.lower() in ["unknown", "", "none"]:
             st.warning("Enter valid role (e.g., Python backend)")
-        
+
+        # ❌ NON-TECH ROLE BLOCK
+        elif not any(word in role.lower() for word in [
+            "python", "backend", "developer", "engineer", "fastapi", "django"
+        ]):
+            st.warning("Enter valid technical role (e.g., Python Backend Developer)")
+
+        # ✅ VALID INPUT
         else:
             query = f"Evaluate {name} {role}"
 
@@ -45,7 +57,6 @@ if menu == "Evaluate Candidate":
 
             st.success("Evaluation Complete ✅")
 
-            # ✅ Better UI
             st.markdown("### 📊 Result")
             st.code(result)
 
@@ -80,11 +91,11 @@ elif menu == "Remove Candidate":
 
     st.header("❌ Remove Candidate")
 
-    name = st.text_input("Enter Candidate Name")
+    remove_name = st.text_input("Enter Candidate Name")
 
     if st.button("Remove"):
-        if name.strip():
-            result = db_tool("DELETE", name=name)
+        if remove_name.strip():
+            result = db_tool("DELETE", name=remove_name)
             st.success(result)
         else:
             st.warning("Enter a valid name")

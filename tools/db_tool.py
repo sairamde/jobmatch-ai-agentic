@@ -31,10 +31,6 @@ def db_tool(action, name=None, score=None, strengths=None, gaps=None, url=None):
             conn.commit()
             return "Saved successfully"
 
-    elif action == "SELECT":
-        cursor.execute("SELECT * FROM candidates WHERE name=?", (name,))
-        return cursor.fetchone() or "No record found"
-
     elif action == "LIST":
         cursor.execute("SELECT name, score FROM candidates")
         data = cursor.fetchall()
@@ -48,11 +44,10 @@ def db_tool(action, name=None, score=None, strengths=None, gaps=None, url=None):
         cursor.execute("SELECT * FROM candidates WHERE name=?", (name,))
         if not cursor.fetchone():
             return "No record found for that candidate"
-
         cursor.execute("DELETE FROM candidates WHERE name=?", (name,))
         conn.commit()
         return "Deleted successfully"
-    
+
     elif action == "CLEAR":
         cursor.execute("DELETE FROM candidates")
         conn.commit()
