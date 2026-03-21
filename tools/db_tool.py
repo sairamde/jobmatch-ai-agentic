@@ -19,42 +19,35 @@ def db_tool(action, name=None, score=None, strengths=None, gaps=None, url=None):
 
     if action == "INSERT":
         cursor.execute("SELECT * FROM candidates WHERE name=?", (name,))
-        exists = cursor.fetchone()
-
-        if exists:
+        if cursor.fetchone():
             cursor.execute("""
             UPDATE candidates SET score=?, strengths=?, gaps=?, url=? WHERE name=?
             """, (score, strengths, gaps, url, name))
             conn.commit()
             return "Updated existing record"
         else:
-            cursor.execute("""
-            INSERT INTO candidates VALUES (?, ?, ?, ?, ?)
-            """, (name, score, strengths, gaps, url))
+            cursor.execute("INSERT INTO candidates VALUES (?, ?, ?, ?, ?)",
+                           (name, score, strengths, gaps, url))
             conn.commit()
             return "Saved successfully"
 
     elif action == "SELECT":
         cursor.execute("SELECT * FROM candidates WHERE name=?", (name,))
-        data = cursor.fetchone()
-        return data if data else "No record found"
+        return cursor.fetchone() or "No record found"
 
     elif action == "LIST":
         cursor.execute("SELECT name, score FROM candidates")
         data = cursor.fetchall()
-        return data if data else "No candidates in database"
+        return data if data else "No candidates in the database yet"
 
     elif action == "TOP":
-        cursor.execute("""
-        SELECT name, score FROM candidates
-        ORDER BY score DESC LIMIT 3
-        """)
+        cursor.execute("SELECT name, score FROM candidates ORDER BY score DESC LIMIT 3")
         return cursor.fetchall()
 
     elif action == "DELETE":
         cursor.execute("SELECT * FROM candidates WHERE name=?", (name,))
         if not cursor.fetchone():
-            return "No record found"
+            return "No record found for that candidate"
 
         cursor.execute("DELETE FROM candidates WHERE name=?", (name,))
         conn.commit()
@@ -63,4 +56,4 @@ def db_tool(action, name=None, score=None, strengths=None, gaps=None, url=None):
     elif action == "CLEAR":
         cursor.execute("DELETE FROM candidates")
         conn.commit()
-        return "All records deleted"
+        return "All records deleted successfully"

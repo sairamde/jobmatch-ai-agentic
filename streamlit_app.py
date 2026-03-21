@@ -30,17 +30,24 @@ if menu == "Evaluate Candidate":
 
     if st.button("Evaluate"):
 
-        if name:
+        # ✅ VALIDATION (IMPORTANT EDGE CASE)
+        if not name.strip():
+            st.warning("Enter candidate name")
+        
+        elif role.lower() in ["unknown", "", "none"]:
+            st.warning("Enter valid role (e.g., Python backend)")
+        
+        else:
             query = f"Evaluate {name} {role}"
 
             with st.spinner("Processing..."):
                 result = run_agent(query)
 
             st.success("Evaluation Complete ✅")
-            st.text_area("Result", result, height=300)
 
-        else:
-            st.warning("Enter candidate name")
+            # ✅ Better UI
+            st.markdown("### 📊 Result")
+            st.code(result)
 
 # ---------------- PAGE 2 ----------------
 elif menu == "Show All Candidates":
@@ -76,8 +83,11 @@ elif menu == "Remove Candidate":
     name = st.text_input("Enter Candidate Name")
 
     if st.button("Remove"):
-        result = db_tool("DELETE", name=name)
-        st.success(result)
+        if name.strip():
+            result = db_tool("DELETE", name=name)
+            st.success(result)
+        else:
+            st.warning("Enter a valid name")
 
 # ---------------- PAGE 5 ----------------
 elif menu == "Clear Database":
